@@ -1,0 +1,29 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "c7a0642cc5acb0b6009325d60930f254"
+name = "ListAI V9"
+handle = "listai-v9"
+application_url = "https://attend-promoted-companies-mask.trycloudflare.com"
+embedded = false
+
+[build]
+automatically_update_urls_on_dev = true
+dev_store_url = "onestore-test.myshopify.com"
+include_config_on_deploy = true
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_products,write_products"
+
+[auth]
+redirect_urls = [
+  "https://attend-promoted-companies-mask.trycloudflare.com/auth/callback",
+  "https://attend-promoted-companies-mask.trycloudflare.com/auth/shopify/callback",
+  "https://attend-promoted-companies-mask.trycloudflare.com/api/auth/callback"
+]
+
+[webhooks]
+api_version = "2024-07"
+
+[pos]
+embedded = false

@@ -1,0 +1,210 @@
+.cls-card {
+    background-color: #fff !important;
+}
+.cls-active-nav {
+    background-color: #ffffff !important;
+    border-color: hsl(var(--input));
+    border-width: 1px;
+    /* color: #fff !important; */
+}
+.cls-header {
+    background: #001c50 !important;
+    color: #fff !important;
+}
+.cls-header-search {
+    background: #1e3a6c4a !important;
+    border: 2px solid #173976 !important;
+    color: #fff !important;
+}
+.cls-logo {
+    font-size: 19px;
+}
+.cls-mainpage-header {
+    padding: 0px !important;
+}
+.cls-product-img {
+    width: 40px !important;
+}
+.cls-table-row td{
+    padding: 5px;
+    cursor: pointer;
+}
+.cls-table-row th{
+    padding: 0px 5px;
+    color: #fff;
+}
+.cls-mainpage {
+    
+}
+.cls-pagination {
+    left: 56%;
+    position: absolute;
+}
+.cls-pagination button {
+    margin-left: 5px;
+}
+.cls-table-heading {
+    /* background: #82868e; */
+    background: #111827;
+    /* border-top: 1px solid #e5e7eb; */
+    border: none !important;
+}
+/* .cls-table-heading tr th {
+    color: #fff !important;
+} */
+.cls-table-heading tr th {
+    height: 30px !important;
+}
+.cls-filter-nav {
+    /* box-shadow: none;
+    background: #f1f1f1;
+    margin-top: 20px;
+    margin-bottom: 10px; */
+    /* box-shadow: none;
+    background: #f7f7f7;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    border: none;
+    padding: 1px 1px; */
+    background: #f7f7f7;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    border: none;
+    padding: 5px;
+    background-color: #f7f7f7 !important;
+}
+.cls-card-content {
+    padding: 0px !important;
+    margin: 5px;
+}
+.cls-tab-list {
+    background: transparent !important;
+    color: #525252;
+}
+.cls-filter-dropdown-btn {
+    float: right;
+    margin: 4px 5px 0px 0px;
+    background: transparent !important;
+    color: #525252;
+    border: none;
+}
+.cls-add-product-btn {
+    /* width: auto !important;
+    float: right;
+    position: absolute;
+    right: 1.3%;
+    top: 67px; */
+    width: auto !important;
+    max-width: fit-content;
+    float: right !important;
+}
+.cls-navbar-logo {
+    width: 120px !important;
+    height: 40px;
+}
+
+.cls-preloader {
+    width: 280px;
+}
+.cls-page-title {
+    /* width: 80%; */
+    font-size: 20px !important;
+    line-height: 1.2 !important;
+}
+.cls-save-product-btn {
+    width: auto !important;
+    max-width: fit-content;
+    float: right;
+    top: -5px;
+    /* position: absolute !important;
+    right: 1.3%; */
+}
+.tox-tinymce {
+    height: 80vh !important;
+    width: 100%;
+    /* width: 60%; */
+}
+.cls-editor-main {
+    width: 100%;
+    margin-top: -20px;
+}
+.cls-page-title-wrap {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 90%;
+    margin-bottom: -20px;
+}
+.cls-table-main {
+    border-radius: 10px !important;
+}
+
+.cls-table-main > div {
+    border-radius: 10px !important;
+    width: 100% !important;
+}
+.cls-ai-enhance-btn {
+    position: relative !important;
+    left: -10px;
+    top: 42px;
+    z-index: 3 !important;
+    width: 130px !important;
+    max-width: 130px !important;
+}
+.cls-nav-analatics {
+    color: #000;
+    font-size: 14px;
+    text-align: center;
+    padding: 0px 40px;
+    border-right: 1px solid lightgray;
+}
+.cls-editor-main-right {
+    width: 35%;
+}
+.cls-image-main {
+    height: 350px;
+    background: #fff;
+    /* border: 2px solid #eeeeee;
+    border-radius: 10px; */
+}
+.cls-product-img-main {
+    height: -webkit-fill-available;
+    margin: 2px;
+    border-radius: 10px !important;
+    box-shadow: 0px 0px 3px 0px #bbbbbb;
+    display: inline-block;
+}
+.cls-img-btn-group {
+    display: inline-block;
+    margin-left: 27px;
+}
+.cls-img-editor-group {
+    display: inline-block;
+    width: 49.7%;
+    position: absolute;
+    /* margin-top: 10px; */
+    margin-left: 28px;
+}
+.cls-image-btn {
+    
+}
+
+.cls-img-texteditor {
+
+}
+
+.cls-topic-title {
+    
+}
+
+.cls-img-editor-group > .tox-tinymce {
+    height: 350px !important;
+}
+
+@media only screen and (max-width: 768px) {
+    .cls-editor-main {
+        width: 100%;
+    }
+}
