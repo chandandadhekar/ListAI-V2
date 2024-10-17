@@ -38,7 +38,7 @@ import OpenAI from "openai";
 
 // **Temporary Hardcoded API Key** (For local development ONLY)
 // Replace this with `process.env.OPENAI_API_KEY` for better security.
-const openaiApiKey = "sk-IbE8sy23y_BHj8MmvJT6UqXPQb_MKjuenHGmAfkLvpT3BlbkFJFrjQdocYDdyeGCqhXbX-LxBf4ygesk6dlowx70qh8A";
+const openaiApiKey = "";
 
 // Initialize OpenAI
 const openai = new OpenAI({
@@ -46,29 +46,88 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true
 });
 
-// Function to generate enhanced product description
-async function generateProductDescription(openai: OpenAI, productDescription:string) {
+
+async function generateProductDescriptionFromImage(openai: OpenAI, imageUrl: string) {
+  if (!imageUrl) {
+    return "<p>Discover the unparalleled quality of our products. Each item is crafted with care, ensuring durability and style. Perfect for any occasion!</p>";
+  }
+
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o-mini",
       messages: [
         {
-          role: "system",
-          content: "You are a helpful assistant that enhances product descriptions for SEO and appeal.",
-        },
-        {
           role: "user",
-          content: `Enhance the following product description: ${productDescription}`,
+          content: [
+            {
+              type: "text",
+              text: `You are an AI that generates product descriptions based on the image analysis. Generate a compelling description focusing on quality and features. return only description not conversation, follow this instructions: You are a helpful assistant that generates product descriptions based on image analysis for SEO, marketplace posting, and customer attraction. Follow these instructions strictly:
+- Always return only the product description generated from the image analysis.
+- Since the user will auto-publish it to a marketplace, ensure that only the product description is returned, without any additional information.
+- If no meaningful description can be extracted from the image, generate a standard product description that emphasizes quality and is suitable for any product. Do not ask for additional input.
+- Enhance the product description using HTML formatting with best-in-class practices, such as proper formatting, and tables (if necessary), ensuring a professional and industry-standard presentation.
+- Ensure the wording and sentences are well-structured, free from copyright infringement, and comply with marketplace guidelines.
+- Ensure its proper html format as its directly going to the text editor so it should render well. so remove '''html etc starting
+`,
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: imageUrl, // Use the provided image URL
+              },
+            },
+          ],
         },
       ],
+      max_tokens: 300, // Set the max tokens for the response
     });
 
-    return response.choices[0].message?.content || "Enhancement not available."; // Ensure a string is returned
+    // Check if a response is available and return it, or a fallback message
+    return response.choices[0].message?.content || "Enhancement not available.";
   } catch (error) {
     console.error("Error with OpenAI API:", error);
-    alert("Error enhancing description. Please try again later.");
-    return productDescription; // User-friendly error message
+    return "An error occurred while generating the description. Please try again later.";
   }
+}
+
+async function generateProductDescription(openai: OpenAI, productDescription:string) {
+
+  if(productDescription == ""){
+    alert("Error: Description is empty!.");
+    return productDescription;
+  }else {
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: `You are a helpful assistant that enhances product descriptions for SEO and appeal 
+            and live products posting on markeplaces and to attaract customers. 
+            also follow below instructions strictly:
+            1. Always return only the product description.
+            2. Since the user will auto-publish it to a marketplace, ensure that only the product description is returned, without any additional information.
+            3. If the product description is empty, respond with a standard product description that emphasizes quality, suitable for any product. Do not ask for the product description.
+            4. Enhance the product description with HTML formatting best in class use poper formating, tables if require, etc to ensure it looks professional and adheres to industry standards.
+            5. Make desciprion wording and sentences good, ensuring infringement voilation. and should be proper and best than previous
+            `,
+          },
+          {
+            role: "user",
+            content: `Enhance the following product description: ${productDescription}`,
+          },
+        ],
+      });
+  
+      return response.choices[0].message?.content || "Enhancement not available."; // Ensure a string is returned
+    } catch (error) {
+      console.error("Error with OpenAI API:", error);
+      alert("Error enhancing description. Please try again later.");
+      return productDescription; // User-friendly error message
+    }
+  }
+
+ 
 }
 
 const removeBackground = async (imageUrl: string | URL | Request) => {
@@ -216,8 +275,8 @@ export default function ProductDetailsPage() {
   const { product } = useLoaderData<typeof loader>();
   const [description, setDescription] = useState(product.descriptionHtml || "");
   const [isEnhancing, setIsEnhancing] = useState(false);
+  const [descriptionImage, setDescriptionImage] = useState("");
 
-  // Enhance product description function
   const enhanceDescription = async () => {
     setIsEnhancing(true);
     const enhancedDescription = await generateProductDescription(openai, description);
@@ -256,7 +315,21 @@ export default function ProductDetailsPage() {
     setIsEnhancing(false);
   };
   
+  const handleGenerateTranscript = async () => {
+    setIsEnhancing(true);
   
+    const imageUrl = product.featuredImage?.url;
+    console.log(imageUrl);
+    if (!imageUrl) {
+      alert("No image found for product.");
+      setIsEnhancing(false);
+      return;
+    }
+    
+    const generatedDescription = await generateProductDescriptionFromImage(openai, imageUrl);
+    setDescriptionImage(generatedDescription);
+    setIsEnhancing(false);
+  };
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
@@ -374,7 +447,7 @@ export default function ProductDetailsPage() {
                       variant="gooeyRight"
                       size="sm"
                       className="h-8 gap-1 cls-image-btn mt-5"
-                      onClick={handleRemoveBackground}
+                      onClick={handleGenerateTranscript}
                       disabled={isEnhancing}
                     >
                       <StarsIcon className="h-3.5 w-3.5" />
@@ -387,13 +460,14 @@ export default function ProductDetailsPage() {
                       apiKey='ij0y6skvh4a2fzemutj6o4zp0r2p294bu2vgjqjhmzy4qcw9' // Replace with your actual TinyMCE API key
                       init={{
                         plugins: [
-                          'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount', 'checklist', 'mediaembed', 'casechange', 'export', 'formatpainter', 'pageembed', 'a11ychecker', 'tinymcespellchecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'editimage', 'advtemplate', 'mentions', 'tinycomments', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown',
+                          'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
                         ],
-                        toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+                        toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | spellcheckdialog typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
                         tinycomments_mode: 'embedded',
                         body_class: 'cls-img-texteditor'
                       }}
-                      value=""
+                      value={descriptionImage}
+                      onEditorChange={(newContent) => setDescriptionImage(newContent)}
                     />
                   </div>
                 </div>
@@ -413,9 +487,9 @@ export default function ProductDetailsPage() {
                     apiKey='ij0y6skvh4a2fzemutj6o4zp0r2p294bu2vgjqjhmzy4qcw9' // Replace with your actual TinyMCE API key
                     init={{
                       plugins: [
-                        'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount', 'checklist', 'mediaembed', 'casechange', 'export', 'formatpainter', 'pageembed', 'a11ychecker', 'tinymcespellchecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'editimage', 'advtemplate', 'mentions', 'tinycomments', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown',
+                        'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
                       ],
-                      toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+                      toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | spellcheckdialog typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
                       tinycomments_mode: 'embedded',
                       body_class: 'cls-texteditor'
                     }}

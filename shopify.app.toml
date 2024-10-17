@@ -3,7 +3,7 @@
 client_id = "c7a0642cc5acb0b6009325d60930f254"
 name = "ListAI V9"
 handle = "listai-v9"
-application_url = "https://disorder-shareholders-valley-leadership.trycloudflare.com"
+application_url = "https://countries-dean-practitioner-ellis.trycloudflare.com"
 embedded = false
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_products,write_products"
 
 [auth]
 redirect_urls = [
-  "https://disorder-shareholders-valley-leadership.trycloudflare.com/auth/callback",
-  "https://disorder-shareholders-valley-leadership.trycloudflare.com/auth/shopify/callback",
-  "https://disorder-shareholders-valley-leadership.trycloudflare.com/api/auth/callback"
+  "https://countries-dean-practitioner-ellis.trycloudflare.com/auth/callback",
+  "https://countries-dean-practitioner-ellis.trycloudflare.com/auth/shopify/callback",
+  "https://countries-dean-practitioner-ellis.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
