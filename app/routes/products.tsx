@@ -1,10 +1,6 @@
 import '../tailwind.css';  // Ensure the correct path to your tailwind.css file
 import { Link } from "@remix-run/react";
 import {
-  ArrowLeftRight,
-  ArrowRight,
-  ChevronLeft,
-  ChevronRight,
   CircleUser,
   ImageIcon,
   Menu,
@@ -27,12 +23,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { json } from "@remix-run/node";
-import { useLoaderData, useNavigate } from "@remix-run/react";
+import { useLoaderData, useNavigate, useActionData } from "@remix-run/react";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
-import { Textarea } from "@/components/ui/textarea";
-import React from 'react';
 import { Editor } from '@tinymce/tinymce-react';
 import OpenAI from "openai";
 
@@ -130,38 +124,28 @@ async function generateProductDescription(openai: OpenAI, productDescription:str
  
 }
 
-const removeBackground = async (imageUrl: string | URL | Request) => {
+const removeBackground = async (imageUrl: string) => {
   try {
-    // Fetch the image from the URL
-    const response = await fetch(imageUrl);
+    const requestBody = {
+      url: imageUrl,
+      _action: "POST"
+    };
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch the image");
-    }
-
-    // Convert the fetched image to a Blob
-    const blob = await response.blob();
-    const formData = new FormData();
-    formData.append("image_file", blob, "image.jpg"); // Appending the blob as a file
-    
-    // Call ClipDrop API with the Blob
-    const clipDropResponse = await fetch('https://clipdrop-api.co/remove-background/v1', {
+    const response = await fetch('/api/removebg', {
       method: 'POST',
       headers: {
-        'x-api-key': '4a72bcbdd63d5ee6e520f8297cf8401be652e4c8415facb8bac9bda7e2c15208e06c32d10ea552d33a995660648273c2',
+        'Content-Type': 'application/json',
       },
-      body: formData,
+      body: JSON.stringify(requestBody), 
     });
 
-    if (!clipDropResponse.ok) {
-      throw new Error("Background removal failed");
+    if (!response.ok) {
+      throw new Error("Failed to remove background");
     }
 
-    // Get the result as a Blob or Object URL
-    const resultBlob = await clipDropResponse.blob();
-    const resultUrl = URL.createObjectURL(resultBlob); // Convert the blob to an object URL
+    const result = await response.json();
 
-    return resultUrl;
+    return result.imageUrl || null;
   } catch (error) {
     console.error("Error removing background:", error);
     alert("Background removal failed. Please try again.");
@@ -228,11 +212,8 @@ const updateShopifyImage = async (productId: any, newImageUrl: any) => {
   }
 };
 
-
-
-// Loader function to fetch product data
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { admin } = await authenticate.admin(request);
+  const { admin, session } = await authenticate.admin(request);
   const url = new URL(request.url);
   const productId = url.searchParams.get("id");
 
@@ -267,16 +248,19 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     throw new Response("Product not found", { status: 404 });
   }
 
-  return json({ product });
+  return json({ product, session});
 };
 
 // Main Product Details Page Component
 export default function ProductDetailsPage() {
-  const { product } = useLoaderData<typeof loader>();
+  const { product, session} = useLoaderData<typeof loader>();
   const [description, setDescription] = useState(product.descriptionHtml || "");
   const [isEnhancing, setIsEnhancing] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [isTranscripting, setisTranscripting] = useState(false);
+  const [isSaving, setisSaving] = useState(false);
   const [descriptionImage, setDescriptionImage] = useState("");
-
+  
   const enhanceDescription = async () => {
     setIsEnhancing(true);
     const enhancedDescription = await generateProductDescription(openai, description);
@@ -285,52 +269,88 @@ export default function ProductDetailsPage() {
   };
 
   const handleRemoveBackground = async () => {
-    setIsEnhancing(true); // Show loading state
-    
-    // Step 1: Get the original image URL
+    setIsRemoving(true);
+
     const originalImageUrl = product.featuredImage?.url;
-  
+    //product.featuredImage.url = "Nothing";
     if (!originalImageUrl) {
       alert("No image found for background removal");
-      setIsEnhancing(false);
+      setIsRemoving(false);
       return;
     }
   
-    // Step 2: Call the background removal API
     const newImageUrl = await removeBackground(originalImageUrl);
-  
+    console.log(newImageUrl);
     if (!newImageUrl) {
-      setIsEnhancing(false);
+      setIsRemoving(false);
       return;
     }
+    
+    console.log(newImageUrl);
+    product.featuredImage.url = newImageUrl;
   
-    // Step 3: Update the image in Shopify
-    const updatedImageUrl = await updateShopifyImage(product.id, newImageUrl);
-  
-    if (updatedImageUrl) {
-      alert("Background removed and image updated successfully!");
-      window.location.reload(); // Reload to reflect the updated image
-    }
-  
-    setIsEnhancing(false);
+    alert("Background removed successfully!");
+    setIsRemoving(false);
   };
-  
+
   const handleGenerateTranscript = async () => {
-    setIsEnhancing(true);
+    setisTranscripting(true);
   
     const imageUrl = product.featuredImage?.url;
     console.log(imageUrl);
     if (!imageUrl) {
       alert("No image found for product.");
-      setIsEnhancing(false);
+      setisTranscripting(false);
       return;
     }
     
     const generatedDescription = await generateProductDescriptionFromImage(openai, imageUrl);
     setDescriptionImage(generatedDescription);
-    setIsEnhancing(false);
+    setisTranscripting(false);
   };
 
+  const handleSaveChanges = async () => {
+    setisSaving(true);
+  
+    const productId = product.id.replace('gid://shopify/Product/', '');
+    
+    const requestData = {
+      productId: productId,
+      description: description,
+      image: product.featuredImage?.url,
+      _action: "PATCH" 
+    };
+  
+    try {
+      const response = await fetch("/api/edit", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+  
+      const responseData = await response.json();
+  
+      if (response.ok) {
+        if (responseData.product) {
+          setDescription(responseData.product.body_html);
+          alert("Product description updated successfully!");
+        } else {
+          alert("Product update successful, but no product data returned.");
+        }
+      } else {
+        console.error("Error from API:", responseData.message);
+        alert(`Failed to update product description: ${responseData.message}`);
+      }
+    } catch (error) {
+      console.error("Error updating product description:", error);
+      alert("An error occurred while saving changes.");
+    } finally {
+      setisSaving(false);
+    }
+  };
+  
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden bg-muted/40 md:block">
@@ -349,7 +369,7 @@ export default function ProductDetailsPage() {
           <div className="flex-1">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4 mt-2">
               <Link
-                to="#"
+                to="/app"
                 className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-primary transition-all hover:text-primary cls-active-nav"
               >
                 <Package className="h-4 w-4" />
@@ -371,7 +391,7 @@ export default function ProductDetailsPage() {
             <SheetContent side="left" className="flex flex-col">
               <nav className="grid gap-2 text-lg font-medium">
                 <Link
-                  to="#"
+                  to="/app"
                   className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground cls-active-nav"
                 >
                   <Package className="h-5 w-5" />
@@ -413,10 +433,16 @@ export default function ProductDetailsPage() {
           <CardHeader className="cls-mainpage-header row">
             <CardTitle className='cls-page-title'>
               <span className='cls-page-title-wrap'>{product.title}</span>
-              <Button variant="gooeyRight" size="sm" className="h-8 gap-1 cls-save-product-btn">
+              <Button 
+                variant="gooeyRight" 
+                size="sm" 
+                className="h-8 gap-1 cls-save-product-btn"
+                onClick={handleSaveChanges}
+                disabled={isSaving}
+                >
                 <SaveIcon className="h-3.5 w-3.5" />
                 <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                  Save Changes
+                  {isSaving ? "Saving..." : "Save Changes"}
                 </span>
               </Button>
             </CardTitle>
@@ -438,20 +464,21 @@ export default function ProductDetailsPage() {
                       size="sm"
                       className="h-8 gap-1 cls-image-btn"
                       onClick={handleRemoveBackground}
-                      disabled={isEnhancing}
+                      disabled={isRemoving}
                     >
                       <ImageIcon className="h-3.5 w-3.5" />
-                      {isEnhancing ? "Removing..." : "Remove Background"}
+                      {isRemoving ? "Removing..." : "Remove Background"}
                     </Button> <br/>
                     <Button
                       variant="gooeyRight"
                       size="sm"
                       className="h-8 gap-1 cls-image-btn mt-5"
                       onClick={handleGenerateTranscript}
-                      disabled={isEnhancing}
+                      disabled={isTranscripting}
                     >
                       <StarsIcon className="h-3.5 w-3.5" />
-                      Generate Transcript &nbsp;
+                      {isTranscripting ? "Transcripting..." : "Generate Transcript "}
+                      &nbsp;
                     </Button>
                     <br/><br/><br/><br/><br/>
                   </div>
